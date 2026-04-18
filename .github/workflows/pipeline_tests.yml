@@ -1,0 +1,38 @@
+name: iPhone Resale Pipeline Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install dependencies
+        run: |
+          pip install pyspark pandas pytest
+
+      - name: Copy CSV to data folder
+        run: |
+          mkdir -p data/cleaned_iphone_listings
+
+      - name: Run pipeline tests
+        run: |
+          pytest tests/test_pipeline.py -v

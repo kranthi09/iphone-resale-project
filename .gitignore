@@ -1,6 +1,5 @@
-# Data files (too large for GitHub)
-data/cleaned_iphone_listings/
-data/*.csv
+# Keep CSV files — needed for CI/CD tests
+# data/*.csv  ← removed
 
 # Python
 __pycache__/

@@ -1,0 +1,16 @@
+# Data files (too large for GitHub)
+data/cleaned_iphone_listings/
+data/*.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Spark logs
+derby.log
+metastore_db/
+
+# VS Code
+.vscode/

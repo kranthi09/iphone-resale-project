@@ -1,11 +1,15 @@
 from playwright.sync_api import sync_playwright
 import time
+import os
 
 BASE_URL = "http://127.0.0.1:5000"
 
+
+# ── Helper ────────────────────────────────────────────────────────
 def get_page(playwright, url=BASE_URL):
-    browser = playwright.chromium.launch(headless=False)
-    page    = browser.new_page()
+    headless = os.getenv("CI", "false").lower() == "true"
+    browser  = playwright.chromium.launch(headless=headless)
+    page     = browser.new_page()
     page.goto(url)
     page.wait_for_load_state("networkidle")
     return browser, page
@@ -22,6 +26,7 @@ def test_dashboard_loads():
         print("✅ Dashboard loaded")
         browser.close()
 
+
 def test_all_kpi_cards_visible():
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -32,12 +37,14 @@ def test_all_kpi_cards_visible():
         print("✅ All 3 KPI cards visible")
         browser.close()
 
+
 def test_bar_chart_renders():
     with sync_playwright() as p:
         browser, page = get_page(p)
         assert page.locator("#barChart").is_visible()
         print("✅ Bar chart rendered")
         browser.close()
+
 
 def test_donut_chart_renders():
     with sync_playwright() as p:
@@ -46,12 +53,14 @@ def test_donut_chart_renders():
         print("✅ Donut chart rendered")
         browser.close()
 
+
 def test_map_renders():
     with sync_playwright() as p:
         browser, page = get_page(p)
         assert page.locator("#map").is_visible()
         print("✅ Map rendered")
         browser.close()
+
 
 def test_filter_dropdowns_visible():
     with sync_playwright() as p:
@@ -67,7 +76,6 @@ def test_filter_dropdowns_visible():
 # ═══════════════════════════════════════════════════
 
 def test_kpi_total_listings(spark_kpis):
-    """Total listings KPI matches PySpark count."""
     expected = f"{spark_kpis['total']/1000:.3f}K"
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -76,8 +84,8 @@ def test_kpi_total_listings(spark_kpis):
         assert displayed == expected
         browser.close()
 
+
 def test_kpi_avg_price(spark_kpis):
-    """Average price KPI matches PySpark average."""
     expected = f"{spark_kpis['avg_price']:,.2f}"
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -86,8 +94,8 @@ def test_kpi_avg_price(spark_kpis):
         assert displayed == expected
         browser.close()
 
+
 def test_kpi_sum_sold(spark_kpis):
-    """Sum of sold KPI matches PySpark sum."""
     expected = f"{spark_kpis['sum_sold']//1000}K"
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -102,7 +110,6 @@ def test_kpi_sum_sold(spark_kpis):
 # ═══════════════════════════════════════════════════
 
 def test_kpi_total_matches_spark(spark_kpis):
-    """KPI total on dashboard exactly matches PySpark row count."""
     assert spark_kpis["total"] == 2371
     print(f"✅ PySpark count {spark_kpis['total']} consistent with source data")
 
@@ -112,11 +119,10 @@ def test_kpi_total_matches_spark(spark_kpis):
 # ═══════════════════════════════════════════════════
 
 def test_filter_by_model(df_clean):
-    """Filtering by model updates KPI to PySpark-computed count."""
     from pyspark.sql import functions as F
-    model    = "iPhone 12 Pro"
+    model          = "iPhone 12 Pro"
     expected_count = df_clean.filter(F.col("model_family") == model).count()
-    expected = f"{expected_count/1000:.3f}K"
+    expected       = f"{expected_count/1000:.3f}K"
 
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -127,12 +133,12 @@ def test_filter_by_model(df_clean):
         assert displayed == expected
         browser.close()
 
+
 def test_filter_by_state(df_clean):
-    """Filtering by state updates KPI to PySpark-computed count."""
     from pyspark.sql import functions as F
-    state    = "TX"
+    state          = "TX"
     expected_count = df_clean.filter(F.col("us_state") == state).count()
-    expected = f"{expected_count/1000:.3f}K"
+    expected       = f"{expected_count/1000:.3f}K"
 
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -143,9 +149,10 @@ def test_filter_by_state(df_clean):
         assert displayed == expected
         browser.close()
 
+
 def test_filter_reset(spark_kpis):
-    """Resetting filter restores PySpark full count."""
     expected = f"{spark_kpis['total']/1000:.3f}K"
+
     with sync_playwright() as p:
         browser, page = get_page(p)
         page.select_option('[data-testid="filter-model"]', label="iPhone 14 Pro Max")
@@ -163,7 +170,6 @@ def test_filter_reset(spark_kpis):
 # ═══════════════════════════════════════════════════
 
 def test_page_load_performance():
-    """Dashboard loads in under 5 seconds."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page    = browser.new_page()

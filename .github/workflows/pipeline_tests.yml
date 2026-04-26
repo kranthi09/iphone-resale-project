@@ -10,6 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      CI: "true"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,12 +30,34 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pyspark pandas pytest
+          pip install pyspark pandas pytest pytest-html flask playwright
 
-      - name: Copy CSV to data folder
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Prepare folders
         run: |
           mkdir -p data/cleaned_iphone_listings
+          mkdir -p reports
 
       - name: Run pipeline tests
         run: |
-          pytest tests/test_pipeline.py -v
+          pytest tests/test_1_pipeline.py -v --tb=short
+
+      - name: Start Flask dashboard
+        run: |
+          python dashboard/app.py &
+          sleep 5
+
+      - name: Run dashboard tests
+        run: |
+          pytest tests/test_2_dashboard.py -v --tb=short --html=reports/test_report.html --self-contained-html
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: reports/test_report.html
